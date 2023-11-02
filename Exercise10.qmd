@@ -1,0 +1,165 @@
+---
+title: "Lab10"
+format: html
+editor: visual
+Author: Adaeze Obinelo
+---
+
+## Setup
+
+```{r}
+# install.packages(c("RSQLite", "DBI"))
+
+library(RSQLite)
+library(DBI)
+library(tidyverse)
+library(dplyr)
+library(sqldf)
+
+# Initialize a temporary in memory database
+con <- dbConnect(SQLite(), ":memory:")
+
+# Download tables
+actor <- read.csv("https://raw.githubusercontent.com/ivanceras/sakila/master/csv-sakila-db/actor.csv")
+rental <- read.csv("https://raw.githubusercontent.com/ivanceras/sakila/master/csv-sakila-db/rental.csv")
+customer <- read.csv("https://raw.githubusercontent.com/ivanceras/sakila/master/csv-sakila-db/customer.csv")
+payment <- read.csv("https://raw.githubusercontent.com/ivanceras/sakila/master/csv-sakila-db/payment_p2007_01.csv")
+
+# Copy data.frames to database
+dbWriteTable(con, "actor", actor)
+dbWriteTable(con, "rental", rental)
+dbWriteTable(con, "customer", customer)
+dbWriteTable(con, "payment", payment)
+```
+
+```{r}
+dbListTables(con)
+```
+
+## Exercise 1
+
+```{sql connection="con"}
+SELECT actor_id, first_name, last_name
+FROM actor
+ORDER by last_name, first_name;
+```
+
+## Exercise 2
+
+```{sql connection="con"}
+SELECT actor_id, first_name, last_name
+FROM actor
+WHERE last_name IN ('WILLIAMS', 'DAVIS')
+```
+
+## Exercise 3
+
+```{sql connection="con"}
+SELECT DISTINCT rental_id, customer_id, inventory_id, rental.rental_date
+FROM rental
+WHERE date (rental.rental_date) = '2005-07-05';
+```
+
+## Exercise 4.1
+
+```{sql connection="con"}
+SELECT *
+FROM payment
+WHERE amount IN (1.99, 7.99, 9.99);
+```
+
+## Exercise 4.2
+
+```{sql connection="con"}
+SELECT *
+FROM payment
+WHERE amount > 5
+```
+
+## Exercise 4.3
+
+```{sql connection="con"}
+SELECT *
+FROM payment
+WHERE amount > 5 and amount < 8
+
+```
+
+## Exercise 5
+
+```{sql connection="con"}
+SELECT p.payment_ID, p.amount
+FROM customer c
+INNER JOIN payment p ON c.customer_id = p.customer_id
+WHERE c.last_name = 'DAVIS';
+
+```
+
+## **Exercise 6.1**
+
+```{sql connection="con"}
+SELECT 
+COUNT(*) AS number_of_rows
+FROM rental
+```
+
+## Exercise 6.2
+
+```{sql connection="con"}
+SELECT customer_id, COUNT(*) AS rental_count
+FROM rental
+GROUP BY customer_id
+```
+
+## Exercise 6.3
+
+```{sql connection="con"}
+SELECT customer_id, COUNT(*) AS rental_count
+FROM rental
+GROUP BY customer_id
+ORDER by rental_count DESC
+
+```
+
+## **Exercise 6.4**
+
+```{sql connection="con"}
+SELECT customer_id, COUNT(*) AS rental_count
+FROM rental
+GROUP BY customer_id
+HAVING COUNT(*) > 40
+ORDER by rental_count DESC
+```
+
+## Exercise 7
+
+```{sql connection="con"}
+SELECT AVG(amount) as AVG_amount, MAX(amount) as Maximum, MIN(amount) as Minimum, SUM(amount) as Sum_payment
+From payment
+
+```
+
+## Exercise 7.1
+
+```{sql connection="con"}
+SELECT customer_id, COUNT(*) as n_payments, AVG(amount) as AVG_amount, MAX(amount) as Maximum, MIN(amount) as Minimum, SUM(amount) as Sum_payment
+From payment
+GROUP by customer_id
+HAVING n_payments > 5
+```
+
+## Exercise 7.2
+
+```{sql connection="con"}
+SELECT customer_id, AVG(amount) as AVG_amount, MAX(amount) as Maximum, MIN(amount) as Minimum, SUM(amount) as Sum_payment
+From payment
+GROUP by customer_id
+
+```
+
+## Cleanup
+
+```{r}
+# clean up
+dbDisconnect(con)
+```
